@@ -1,299 +1,103 @@
-/**
- * شاشة لوحة التحكم - وارد 3.0
- */
-
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { COLORS, SIZES, SPACING } from '../utils/constants';
-import { Card, CustomButton, StatusBadge, LoadingScreen, EmptyState } from '../components/Common';
-import databaseService from '../services/database';
+import { Ionicons } from '@expo/vector-icons';
+import { getDatabase, TransactionService } from '../services/database';
+import { STATUS_COLORS } from '../utils/constants';
 
-const DashboardScreen = ({ navigation }) => {
+export default function DashboardScreen({ navigation }) {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [stats, setStats] = useState({
-    total: 0,
-    active: 0,
-    completedToday: 0,
-    late: 0,
-    pending: 0,
-  });
+  const [stats, setStats] = useState({ active: 0, overdue: 0, endingToday: 0, completionRate: 0 });
   const [recentTransactions, setRecentTransactions] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  /**
-   * تحميل بيانات لوحة التحكم
-   */
-  const loadDashboardData = async () => {
+  const loadDashboard = async () => {
     try {
-      const dashboardStats = await databaseService.getDashboardStats();
+      const db = await getDatabase();
+      const dashboardStats = await TransactionService.getDashboardStats(db);
+      const recent = await TransactionService.getAll(db, { limit: 5 });
       setStats(dashboardStats);
-
-      const transactions = await databaseService.getAllTransactions({});
-      setRecentTransactions(transactions.slice(0, 5)); // آخر 5 معاملات
+      setRecentTransactions(recent || []);
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+      console.error('Error loading dashboard:', error);
     }
   };
 
-  /**
-   * سحب للتحديث
-   */
-  const onRefresh = () => {
+  useEffect(() => { loadDashboard(); }, []);
+
+  const onRefresh = async () => {
     setRefreshing(true);
-    loadDashboardData();
+    await loadDashboard();
+    setRefreshing(false);
   };
 
-  /**
-   * بطاقة إحصائية
-   */
-  const StatCard = ({ title, value, color, icon }) => (
-    <Card style={[styles.statCard, { borderLeftColor: color }]}>
-      <View style={styles.statContent}>
-        <View>
-          <Text style={styles.statValue}>{value}</Text>
-          <Text style={styles.statTitle}>{title}</Text>
-        </View>
-        {icon && <View style={styles.statIcon}>{icon}</View>}
-      </View>
-    </Card>
+  const StatCard = ({ title, value, icon, color }) => (
+    <TouchableOpacity style={[styles.statCard, { borderLeftColor: color }]} onPress={() => navigation.navigate('Transactions')}>
+      <Ionicons name={icon} size={24} color={color} />
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statTitle}>{title}</Text>
+    </TouchableOpacity>
   );
 
-  if (loading) {
-    return <LoadingScreen message={t('loading')} />;
-  }
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return t('goodMorning');
+    if (hour < 18) return t('welcome');
+    return t('goodEvening');
+  };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      {/* العنوان */}
+    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('dashboard.title')}</Text>
-        <Text style={styles.headerSubtitle}>
-          {new Date().toLocaleDateString('ar-SA', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
-        </Text>
+        <Text style={styles.greeting}>{getGreeting()}</Text>
+        <Text style={styles.subtitle}>{t('dashboard.needsAttention')}</Text>
       </View>
 
-      {/* الإحصائيات */}
-      <View style={styles.statsGrid}>
-        <StatCard
-          title={t('dashboard.totalTransactions')}
-          value={stats.total}
-          color={COLORS.primary}
-        />
-        <StatCard
-          title={t('dashboard.activeTransactions')}
-          value={stats.active}
-          color={COLORS.statusActive}
-        />
-        <StatCard
-          title={t('dashboard.completedToday')}
-          value={stats.completedToday}
-          color={COLORS.success}
-        />
-        <StatCard
-          title={t('dashboard.lateTransactions')}
-          value={stats.late}
-          color={COLORS.error}
-        />
+      <View style={styles.statsRow}>
+        <StatCard title={t('dashboard.activeTransactions')} value={stats.active} icon="pulse" color="#10B981" />
+        <StatCard title={t('dashboard.overdueTransactions')} value={stats.overdue} icon="alert-circle" color="#EF4444" />
+        <StatCard title={t('dashboard.endingToday')} value={stats.endingToday} icon="calendar" color="#F97316" />
+        <StatCard title={t('dashboard.completionRate')} value={`${stats.completionRate}%`} icon="checkmark-circle" color="#3B82F6" />
       </View>
 
-      {/* المعاملات الأخيرة */}
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('dashboard.recentActivity')}</Text>
-          <CustomButton
-            title={t('transactions.title')}
-            variant="secondary"
-            size="small"
-            onPress={() => navigation.navigate('Transactions')}
-          />
-        </View>
-
-        {recentTransactions.length > 0 ? (
-          recentTransactions.map((transaction) => (
-            <Card
-              key={transaction.id}
-              onPress={() =>
-                navigation.navigate('TransactionDetails', { id: transaction.id })
-              }
-            >
-              <View style={styles.transactionItem}>
-                <View style={styles.transactionInfo}>
-                  <Text style={styles.transactionNumber} numberOfLines={1}>
-                    {transaction.transaction_number}
-                  </Text>
-                  <Text style={styles.transactionSubject} numberOfLines={2}>
-                    {transaction.subject}
-                  </Text>
-                  <Text style={styles.transactionDate}>
-                    {new Date(transaction.date_received).toLocaleDateString('ar-SA')}
-                  </Text>
-                </View>
-                <StatusBadge status={transaction.status} />
-              </View>
-            </Card>
-          ))
+        <Text style={styles.sectionTitle}>{t('dashboard.newInbox')}</Text>
+        {recentTransactions.length === 0 ? (
+          <View style={styles.emptyState}><Text>{t('common.noData')}</Text></View>
         ) : (
-          <EmptyState
-            title="لا توجد معاملات"
-            subtitle="ابدأ بإضافة معاملة جديدة"
-            action={
-              <CustomButton
-                title={t('transactions.newTransaction')}
-                onPress={() => navigation.navigate('NewTransaction')}
-              />
-            }
-          />
+          recentTransactions.map((tx) => (
+            <TouchableOpacity key={tx.id} style={styles.transactionCard} onPress={() => navigation.navigate('TransactionDetail', { id: tx.id })}>
+              <View style={styles.txHeader}>
+                <Text style={styles.txNumber}>{tx.transaction_number}</Text>
+                <View style={[styles.badge, { backgroundColor: STATUS_COLORS[tx.status] || '#6B7280' }]}><Text style={styles.badgeText}>{tx.status}</Text></View>
+              </View>
+              <Text style={styles.txSubject}>{tx.subject}</Text>
+              <Text style={styles.txSender}>{tx.sender}</Text>
+            </TouchableOpacity>
+          ))
         )}
-      </View>
-
-      {/* إجراءات سريعة */}
-      <View style={styles.quickActions}>
-        <CustomButton
-          title={t('transactions.newTransaction')}
-          onPress={() => navigation.navigate('NewTransaction')}
-          style={styles.quickActionButton}
-        />
-        <CustomButton
-          title={t('search.title')}
-          variant="secondary"
-          onPress={() => navigation.navigate('Search')}
-          style={styles.quickActionButton}
-        />
-        <CustomButton
-          title={t('notifications.title')}
-          variant="secondary"
-          onPress={() => navigation.navigate('Notifications')}
-          style={styles.quickActionButton}
-        />
       </View>
     </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  contentContainer: {
-    padding: SPACING.md,
-  },
-  header: {
-    marginBottom: SPACING.lg,
-  },
-  headerTitle: {
-    fontSize: SIZES.fontSizeXXL,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-  },
-  headerSubtitle: {
-    fontSize: SIZES.fontSizeMD,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.lg,
-  },
-  statCard: {
-    width: '48%',
-    marginBottom: SPACING.md,
-    borderLeftWidth: 4,
-  },
-  statContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: SIZES.fontSizeXXXL,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-  },
-  statTitle: {
-    fontSize: SIZES.fontSizeSM,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
-  },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  section: {
-    marginBottom: SPACING.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: SIZES.fontSizeXL,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  transactionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  transactionInfo: {
-    flex: 1,
-    marginRight: SPACING.md,
-  },
-  transactionNumber: {
-    fontSize: SIZES.fontSizeSM,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  transactionSubject: {
-    fontSize: SIZES.fontSizeMD,
-    color: COLORS.textPrimary,
-    marginVertical: SPACING.xs,
-  },
-  transactionDate: {
-    fontSize: SIZES.fontSizeSM,
-    color: COLORS.textSecondary,
-  },
-  quickActions: {
-    marginBottom: SPACING.xl,
-  },
-  quickActionButton: {
-    marginBottom: SPACING.sm,
-  },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  header: { padding: 20, paddingTop: 60, backgroundColor: '#fff' },
+  greeting: { fontSize: 24, fontWeight: 'bold', color: '#1F2937' },
+  subtitle: { fontSize: 14, color: '#6B7280', marginTop: 4 },
+  statsRow: { flexDirection: 'row', flexWrap: 'wrap', padding: 16, gap: 12 },
+  statCard: { flex: 1, minWidth: '45%', backgroundColor: '#fff', padding: 16, borderRadius: 12, borderLeftWidth: 4 },
+  statValue: { fontSize: 28, fontWeight: 'bold', color: '#1F2937', marginTop: 8 },
+  statTitle: { fontSize: 12, color: '#6B7280', marginTop: 4 },
+  section: { padding: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1F2937', marginBottom: 12 },
+  transactionCard: { backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12 },
+  txHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  txNumber: { fontSize: 12, color: '#6B7280' },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  badgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  txSubject: { fontSize: 16, fontWeight: '600', color: '#1F2937', marginBottom: 4 },
+  txSender: { fontSize: 14, color: '#6B7280' },
+  emptyState: { padding: 32, alignItems: 'center', backgroundColor: '#fff', borderRadius: 12 },
 });
-
-export default DashboardScreen;

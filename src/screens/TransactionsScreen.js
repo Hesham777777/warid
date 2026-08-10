@@ -1,340 +1,89 @@
-/**
- * شاشة قائمة المعاملات - وارد 3.0
- */
-
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { COLORS, SIZES, SPACING, TRANSACTION_STATUS } from '../utils/constants';
-import { Card, StatusBadge, PriorityBadge, LoadingScreen, EmptyState, Input, CustomButton } from '../components/Common';
-import databaseService from '../services/database';
-import { formatDate } from '../utils/helpers';
+import { Ionicons } from '@expo/vector-icons';
+import { getDatabase, TransactionService } from '../services/database';
+import { STATUS_COLORS, TRANSACTION_STATUS } from '../utils/constants';
 
-const TransactionsScreen = ({ navigation }) => {
+export default function TransactionsScreen({ navigation }) {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [transactions, setTransactions] = useState([]);
-  const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState(null);
+  const [filterStatus, setFilterStatus] = useState(null);
 
-  useEffect(() => {
-    loadTransactions();
-  }, []);
-
-  useEffect(() => {
-    filterTransactions();
-  }, [transactions, searchQuery, selectedStatus]);
-
-  /**
-   * تحميل المعاملات
-   */
   const loadTransactions = async () => {
     try {
-      const data = await databaseService.getAllTransactions({});
-      setTransactions(data);
+      const db = await getDatabase();
+      const filters = { search: searchQuery, status: filterStatus };
+      const result = await TransactionService.getAll(db, filters);
+      setTransactions(result || []);
     } catch (error) {
       console.error('Error loading transactions:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
     }
   };
 
-  /**
-   * تصفية المعاملات
-   */
-  const filterTransactions = () => {
-    let filtered = [...transactions];
+  useEffect(() => { loadTransactions(); }, [searchQuery, filterStatus]);
 
-    // تصفية حسب البحث
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (t) =>
-          t.transaction_number?.toLowerCase().includes(query) ||
-          t.subject?.toLowerCase().includes(query) ||
-          t.sender?.toLowerCase().includes(query)
-      );
-    }
-
-    // تصفية حسب الحالة
-    if (selectedStatus) {
-      filtered = filtered.filter((t) => t.status === selectedStatus);
-    }
-
-    setFilteredTransactions(filtered);
-  };
-
-  /**
-   * سحب للتحديث
-   */
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadTransactions();
-  };
-
-  /**
-   * تبديل حالة التصفية
-   */
-  const toggleStatusFilter = (status) => {
-    setSelectedStatus(selectedStatus === status ? null : status);
-  };
-
-  /**
-   *_renderItem
-   */
-  const renderItem = ({ item }) => (
-    <Card
-      onPress={() => navigation.navigate('TransactionDetails', { id: item.id })}
-    >
-      <View style={styles.transactionCard}>
-        <View style={styles.transactionHeader}>
-          <Text style={styles.transactionNumber} numberOfLines={1}>
-            {item.transaction_number}
-          </Text>
-          <PriorityBadge priority={item.priority} />
-        </View>
-
-        <Text style={styles.transactionSubject} numberOfLines={2}>
-          {item.subject}
-        </Text>
-
-        <View style={styles.transactionMeta}>
-          <Text style={styles.transactionSender}>
-            {t('transactions.sender')}: {item.sender}
-          </Text>
-          <Text style={styles.transactionDate}>
-            {formatDate(item.date_received)}
-          </Text>
-        </View>
-
-        <View style={styles.transactionFooter}>
-          <StatusBadge status={item.status} size="medium" />
-          {item.deadline && (
-            <Text
-              style={[
-                styles.deadlineText,
-                new Date(item.deadline) < new Date() && styles.deadlineLate,
-              ]}
-            >
-              {t('transactions.deadline')}: {formatDate(item.deadline)}
-            </Text>
-          )}
+  const renderTransaction = ({ item }) => (
+    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('TransactionDetail', { id: item.id })}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.txNumber}>{item.transaction_number}</Text>
+        <View style={[styles.badge, { backgroundColor: STATUS_COLORS[item.status] || '#6B7280' }]}>
+          <Text style={styles.badgeText}>{t(`status.${item.status}`) || item.status}</Text>
         </View>
       </View>
-    </Card>
+      <Text style={styles.subject} numberOfLines={2}>{item.subject}</Text>
+      <View style={styles.cardFooter}>
+        <Text style={styles.sender}>{item.sender}</Text>
+        <Text style={styles.date}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
+      </View>
+    </TouchableOpacity>
   );
-
-  /**
-   * مصفوفة حالات المعاملات للتصفية
-   */
-  const statusFilters = Object.values(TRANSACTION_STATUS);
-
-  if (loading) {
-    return <LoadingScreen message={t('loading')} />;
-  }
 
   return (
     <View style={styles.container}>
-      {/* شريط البحث */}
       <View style={styles.searchBar}>
-        <Input
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder={t('search.keyword')}
-          style={styles.searchInput}
-        />
+        <Ionicons name="search" size={20} color="#9CA3AF" />
+        <TextInput style={styles.searchInput} placeholder={t('transaction.search')} value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor="#9CA3AF" />
+        {searchQuery.length > 0 && <TouchableOpacity onPress={() => setSearchQuery('')}><Ionicons name="close-circle" size={20} color="#9CA3AF" /></TouchableOpacity>}
       </View>
-
-      {/* تصفية الحالات */}
-      <View style={styles.filterContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterScrollContent}
-        >
-          {statusFilters.map((status) => (
-            <TouchableOpacity
-              key={status}
-              onPress={() => toggleStatusFilter(status)}
-              style={[
-                styles.filterChip,
-                selectedStatus === status && styles.filterChipActive,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  selectedStatus === status && styles.filterChipTextActive,
-                ]}
-              >
-                {t(`status.${status}`)}
-              </Text>
-            </TouchableOpacity>
+      
+      <View style={styles.filterRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <TouchableOpacity style={[styles.filterChip, !filterStatus && styles.filterChipActive]} onPress={() => setFilterStatus(null)}><Text style={[styles.filterChipText, !filterStatus && styles.filterChipTextActive]}>{t('transaction.all')}</Text></TouchableOpacity>
+          {Object.keys(TRANSACTION_STATUS).map(key => (
+            <TouchableOpacity key={key} style={[styles.filterChip, filterStatus === TRANSACTION_STATUS[key] && styles.filterChipActive]} onPress={() => setFilterStatus(TRANSACTION_STATUS[key])}><Text style={[styles.filterChipText, filterStatus === TRANSACTION_STATUS[key] && styles.filterChipTextActive]}>{t(`status.${TRANSACTION_STATUS[key]}`)}</Text></TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-      {/* قائمة المعاملات */}
-      <FlatList
-        data={filteredTransactions}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <EmptyState
-            title={t('transactions.title')}
-            subtitle={searchQuery || selectedStatus ? 'لا توجد نتائج' : 'ابدأ بإضافة معاملة جديدة'}
-            action={
-              !searchQuery && !selectedStatus && (
-                <CustomButton
-                  title={t('transactions.newTransaction')}
-                  onPress={() => navigation.navigate('NewTransaction')}
-                />
-              )
-            }
-          />
-        }
-      />
-
-      {/* زر إضافة معاملة جديدة */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => navigation.navigate('NewTransaction')}
-      >
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+      <FlatList data={transactions} renderItem={renderTransaction} keyExtractor={item => item.id.toString()} contentContainerStyle={styles.list} ListEmptyComponent={<View style={styles.empty}><Ionicons name="folder-open-outline" size={48} color="#D1D5DB" /><Text style={styles.emptyText}>{t('common.noData')}</Text></View>} />
+      
+      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('CreateTransaction')}><Ionicons name="add" size={28} color="#fff" /></TouchableOpacity>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  searchBar: {
-    padding: SPACING.md,
-    paddingBottom: 0,
-  },
-  searchInput: {
-    marginBottom: 0,
-  },
-  filterContainer: {
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  filterScrollContent: {
-    paddingHorizontal: SPACING.md,
-  },
-  filterChip: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    borderRadius: SIZES.radiusRound,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginRight: SPACING.sm,
-  },
-  filterChipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  filterChipText: {
-    fontSize: SIZES.fontSizeSM,
-    color: COLORS.textSecondary,
-  },
-  filterChipTextActive: {
-    color: COLORS.textLight,
-  },
-  listContent: {
-    padding: SPACING.md,
-    paddingBottom: 100,
-  },
-  transactionCard: {
-    padding: SPACING.md,
-  },
-  transactionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  transactionNumber: {
-    fontSize: SIZES.fontSizeSM,
-    color: COLORS.primary,
-    fontWeight: '600',
-    flex: 1,
-  },
-  transactionSubject: {
-    fontSize: SIZES.fontSizeMD,
-    color: COLORS.textPrimary,
-    fontWeight: '500',
-    marginBottom: SPACING.sm,
-  },
-  transactionMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.sm,
-  },
-  transactionSender: {
-    fontSize: SIZES.fontSizeSM,
-    color: COLORS.textSecondary,
-  },
-  transactionDate: {
-    fontSize: SIZES.fontSizeSM,
-    color: COLORS.textSecondary,
-  },
-  transactionFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  deadlineText: {
-    fontSize: SIZES.fontSizeXS,
-    color: COLORS.textSecondary,
-  },
-  deadlineLate: {
-    color: COLORS.error,
-    fontWeight: '600',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: SPACING.lg,
-    right: SPACING.lg,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  fabText: {
-    fontSize: 24,
-    color: COLORS.textLight,
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', margin: 16, padding: 12, borderRadius: 12, elevation: 1 },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 16, color: '#1F2937' },
+  filterRow: { paddingHorizontal: 16, marginBottom: 12 },
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', marginRight: 8, borderWidth: 1, borderColor: '#E5E7EB' },
+  filterChipActive: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' },
+  filterChipText: { color: '#6B7280', fontSize: 14 },
+  filterChipTextActive: { color: '#fff', fontWeight: '600' },
+  list: { padding: 16 },
+  card: { backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12, elevation: 1 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  txNumber: { fontSize: 12, color: '#6B7280' },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  badgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  subject: { fontSize: 16, fontWeight: '600', color: '#1F2937', marginBottom: 8 },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between' },
+  sender: { fontSize: 14, color: '#6B7280' },
+  date: { fontSize: 12, color: '#9CA3AF' },
+  empty: { alignItems: 'center', padding: 48 },
+  emptyText: { marginTop: 16, fontSize: 16, color: '#9CA3AF' },
+  fab: { position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: '#3B82F6', alignItems: 'center', justifyContent: 'center', elevation: 4 },
 });
-
-// استيراد ScrollView
-import { ScrollView } from 'react-native';
-
-export default TransactionsScreen;
