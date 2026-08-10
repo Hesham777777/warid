@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase, TransactionService } from '../services/database';
@@ -10,21 +10,28 @@ export default function TransactionsScreen({ navigation }) {
   const [transactions, setTransactions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState(null);
-
-  const loadTransactions = async () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const loadTransactions = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const db = await getDatabase();
       const filters = { search: searchQuery, status: filterStatus };
       const result = await TransactionService.getAll(db, filters);
       setTransactions(result || []);
-    } catch (error) {
-      console.error('Error loading transactions:', error);
+    } catch (err) {
+      console.error('Error loading transactions:', err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [searchQuery, filterStatus]);
+  
+  useEffect(() => { loadTransactions(); }, [loadTransactions]);
 
-  useEffect(() => { loadTransactions(); }, [searchQuery, filterStatus]);
-
-  const renderTransaction = ({ item }) => (
+  const renderTransaction = useCallback(({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('TransactionDetail', { id: item.id })}>
       <View style={styles.cardHeader}>
         <Text style={styles.txNumber}>{item.transaction_number}</Text>
@@ -32,34 +39,96 @@ export default function TransactionsScreen({ navigation }) {
           <Text style={styles.badgeText}>{t(`status.${item.status}`) || item.status}</Text>
         </View>
       </View>
-      <Text style={styles.subject} numberOfLines={2}>{item.subject}</Text>
+      <Text style={styles.subject} numberOfLines={2}>{item?.subject || ''}</Text>
       <View style={styles.cardFooter}>
-        <Text style={styles.sender}>{item.sender}</Text>
+        <Text style={styles.sender}>{item?.sender || ''}</Text>
         <Text style={styles.date}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
       </View>
     </TouchableOpacity>
-  );
+  ), [navigation, t]);
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+          <Text style={styles.errorText}>{t('common.error')}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadTransactions}>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.searchBar}>
         <Ionicons name="search" size={20} color="#9CA3AF" />
-        <TextInput style={styles.searchInput} placeholder={t('transaction.search')} value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor="#9CA3AF" />
-        {searchQuery.length > 0 && <TouchableOpacity onPress={() => setSearchQuery('')}><Ionicons name="close-circle" size={20} color="#9CA3AF" /></TouchableOpacity>}
+        <TextInput 
+          style={styles.searchInput} 
+          placeholder={t('transaction.search')} 
+          value={searchQuery} 
+          onChangeText={setSearchQuery} 
+          placeholderTextColor="#9CA3AF" 
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+          </TouchableOpacity>
+        )}
       </View>
       
       <View style={styles.filterRow}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <TouchableOpacity style={[styles.filterChip, !filterStatus && styles.filterChipActive]} onPress={() => setFilterStatus(null)}><Text style={[styles.filterChipText, !filterStatus && styles.filterChipTextActive]}>{t('transaction.all')}</Text></TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterChip, !filterStatus && styles.filterChipActive]} 
+            onPress={() => setFilterStatus(null)}
+          >
+            <Text style={[styles.filterChipText, !filterStatus && styles.filterChipTextActive]}>
+              {t('transaction.all')}
+            </Text>
+          </TouchableOpacity>
           {Object.keys(TRANSACTION_STATUS).map(key => (
-            <TouchableOpacity key={key} style={[styles.filterChip, filterStatus === TRANSACTION_STATUS[key] && styles.filterChipActive]} onPress={() => setFilterStatus(TRANSACTION_STATUS[key])}><Text style={[styles.filterChipText, filterStatus === TRANSACTION_STATUS[key] && styles.filterChipTextActive]}>{t(`status.${TRANSACTION_STATUS[key]}`)}</Text></TouchableOpacity>
+            <TouchableOpacity 
+              key={key} 
+              style={[styles.filterChip, filterStatus === TRANSACTION_STATUS[key] && styles.filterChipActive]} 
+              onPress={() => setFilterStatus(TRANSACTION_STATUS[key])}
+            >
+              <Text style={[styles.filterChipText, filterStatus === TRANSACTION_STATUS[key] && styles.filterChipTextActive]}>
+                {t(`status.${TRANSACTION_STATUS[key]}`)}
+              </Text>
+            </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-      <FlatList data={transactions} renderItem={renderTransaction} keyExtractor={item => item.id.toString()} contentContainerStyle={styles.list} ListEmptyComponent={<View style={styles.empty}><Ionicons name="folder-open-outline" size={48} color="#D1D5DB" /><Text style={styles.emptyText}>{t('common.noData')}</Text></View>} />
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+        </View>
+      ) : (
+        <FlatList 
+          data={transactions} 
+          renderItem={renderTransaction} 
+          keyExtractor={item => item?.id?.toString() || Math.random().toString()} 
+          contentContainerStyle={styles.list} 
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          initialNumToRender={10}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="folder-open-outline" size={48} color="#D1D5DB" />
+              <Text style={styles.emptyText}>{t('common.noData')}</Text>
+            </View>
+          } 
+        />
+      )}
       
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('CreateTransaction')}><Ionicons name="add" size={28} color="#fff" /></TouchableOpacity>
+      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('CreateTransaction')}>
+        <Ionicons name="add" size={28} color="#fff" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -86,4 +155,9 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', padding: 48 },
   emptyText: { marginTop: 16, fontSize: 16, color: '#9CA3AF' },
   fab: { position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: '#3B82F6', alignItems: 'center', justifyContent: 'center', elevation: 4 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  errorText: { fontSize: 16, color: '#EF4444', marginTop: 16, textAlign: 'center' },
+  retryButton: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: '#3B82F6', borderRadius: 8 },
+  retryButtonText: { color: '#fff', fontWeight: '600' },
 });
