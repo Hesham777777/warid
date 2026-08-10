@@ -1,326 +1,338 @@
-/**
- * إعدادات اللغة والترجمة - وارد 3.0
- */
-
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 const resources = {
   ar: {
     translation: {
-      // العام
-      appName: 'وارد 3.0',
-      welcome: 'مرحباً بك',
-      loading: 'جاري التحميل...',
-      error: 'خطأ',
-      success: 'نجاح',
-      cancel: 'إلغاء',
-      confirm: 'تأكيد',
-      save: 'حفظ',
-      delete: 'حذف',
-      edit: 'تعديل',
-      add: 'إضافة',
-      search: 'بحث',
-      filter: 'تصفية',
-      refresh: 'تحديث',
-      back: 'رجوع',
-      next: 'التالي',
-      finish: 'إنهاء',
+      // الترحيب
+      welcome: 'مرحباً',
+      goodMorning: 'صباح الخير',
+      goodEvening: 'مساء الخير',
       
-      // حالات المعاملة
+      // الحالات
       status: {
-        arrived: 'وصلت',
-        registering: 'قيد التسجيل',
+        received: 'وصلت',
+        inRegistration: 'قيد التسجيل',
         active: 'نشطة',
-        directed: 'موجّهة',
-        pending: 'منتظرة رد',
+        forwarded: 'موجّهة',
+        awaitingResponse: 'منتظرة رد',
         suspended: 'معلّقة',
-        late: 'متأخرة',
+        overdue: 'متأخرة',
         completed: 'مكتملة',
         archived: 'مؤرشفة',
       },
       
       // الأولويات
       priority: {
-        low: 'عادي',
-        medium: 'متوسط',
-        high: 'عاجل',
-        urgent: 'مهم جداً وعاجل',
+        normal: 'عادي',
+        important: 'مهم',
+        urgent: 'عاجل',
+        critical: 'حرج',
       },
       
       // لوحة التحكم
       dashboard: {
         title: 'لوحة التحكم',
-        totalTransactions: 'إجمالي المعاملات',
-        activeTransactions: 'المعاملات النشطة',
-        completedToday: 'المكتملة اليوم',
-        lateTransactions: 'المتأخرة',
-        pendingResponses: 'المنتظرة رد',
-        statistics: 'الإحصائيات',
-        recentActivity: 'النشاط الأخير',
+        activeTransactions: 'نشطة',
+        overdueTransactions: 'متأخرة',
+        endingToday: 'تنتهي اليوم',
+        completionRate: 'معدل الإنجاز',
+        needsAttention: 'تحتاج اهتماماً الآن',
+        newInbox: 'الوارد الجديد',
+        morningSummary: 'ملخص يومك',
+        transactionsEndingToday: 'معاملات تنتهي اليوم',
+        transactionsOverdue: 'معاملات متأخرة',
+        transactionsAwaitingResponse: 'معاملات تنتظر الرد',
+        activeTransactions: 'معاملات نشطة',
       },
       
       // المعاملات
-      transactions: {
-        title: 'المعاملات',
-        newTransaction: 'معاملة جديدة',
-        transactionNumber: 'رقم المعاملة',
+      transaction: {
+        new: 'معاملة جديدة',
+        all: 'جميع المعاملات',
+        details: 'تفاصيل المعاملة',
+        number: 'رقم المعاملة',
         subject: 'الموضوع',
-        sender: 'المرسل',
-        recipient: 'المستلم',
-        dateReceived: 'تاريخ الاستلام',
-        deadline: 'الموعد النهائي',
+        sender: 'الجهة المرسلة',
+        type: 'النوع',
+        priority: 'الأولوية',
+        deadline: 'المهلة',
+        status: 'الحالة',
         attachments: 'المرفقات',
-        notes: 'ملاحظات',
-        history: 'سجل المعاملة',
-        directTo: 'توجيه إلى',
-        followUp: 'متابعة',
-        complete: 'إنجاز',
+        comments: 'التعليقات',
+        timeline: 'الجدول الزمني',
+        info: 'المعلومات',
+        actions: 'الإجراءات',
+        close: 'إغلاق',
+        reopen: 'إعادة فتح',
+        forward: 'توجيه',
+        remind: 'تذكير',
         archive: 'أرشفة',
+        delete: 'حذف',
+        search: 'بحث',
+        filter: 'تصفية',
+        create: 'إنشاء',
+        save: 'حفظ',
+        cancel: 'إلغاء',
+        confirm: 'تأكيد',
+        edit: 'تعديل',
       },
       
-      // البحث والتقارير
+      // إنشاء معاملة
+      createTransaction: {
+        basicInfo: 'المعلومات الأساسية',
+        classification: 'تصنيف المعاملة',
+        deadline: 'تحديد المهلة',
+        forwarding: 'التوجيه',
+        attachments: 'المرفقات',
+        review: 'مراجعة',
+        autoSaved: 'تم الحفظ التلقائي',
+        suggestFromImage: 'إدخال من صورة',
+        template: 'استخدام قالب',
+      },
+      
+      // البحث
       search: {
-        title: 'بحث متقدم',
-        keyword: 'كلمة مفتاحية',
-        dateFrom: 'من تاريخ',
-        dateTo: 'إلى تاريخ',
-        statusFilter: 'حالة المعاملة',
-        priorityFilter: 'الأولوية',
-        departmentFilter: 'القسم',
-        results: 'نتائج البحث',
-        exportReport: 'تصدير التقرير',
-        pdf: 'PDF',
-        excel: 'Excel',
-        csv: 'CSV',
+        advanced: 'بحث متقدم',
+        saveSearch: 'حفظ البحث',
+        savedSearches: 'عمليات البحث المحفوظة',
+        filters: 'الفلاتر',
+        results: 'النتائج',
+      },
+      
+      // التقارير
+      reports: {
+        title: 'التقارير',
+        daily: 'يومي',
+        weekly: 'أسبوعي',
+        monthly: 'شهري',
+        performance: 'الأداء',
+        overdue: 'المتأخرات',
+        incoming: 'الوارد',
+        completion: 'الإنجاز',
+        departments: 'الأقسام',
+        employees: 'الموظفين',
+        types: 'أنواع المعاملات',
+        senders: 'الجهات المرسلة',
+        export: 'تصدير',
+        print: 'طباعة',
+      },
+      
+      // الإعدادات
+      settings: {
+        title: 'الإعدادات',
+        profile: 'الملف الشخصي',
+        security: 'الأمان',
+        notifications: 'الإشعارات',
+        language: 'اللغة',
+        theme: 'السمة',
+        backup: 'النسخ الاحتياطي',
+        restore: 'الاستعادة',
+        about: 'حول التطبيق',
+        version: 'الإصدار',
+      },
+      
+      // الأمان
+      security: {
+        pin: 'رمز PIN',
+        biometric: 'البصمة',
+        lock: 'قفل',
+        unlock: 'فتح',
+        changePin: 'تغيير الرمز',
+        forgotPin: 'نسيت الرمز؟',
+        recoveryCodes: 'رموز الاستعادة',
+        privacy: 'الخصوصية',
       },
       
       // الإشعارات
       notifications: {
         title: 'الإشعارات',
-        newMessage: 'رسالة جديدة',
-        deadlineApproaching: 'موعد نهائي يقترب',
-        transactionLate: 'معاملة متأخرة',
-        responseRequired: 'مطلوب رد',
-        markAsRead: 'وضع علامة كمقروء',
-        markAllAsRead: 'وضع الكل كمقروء',
-        clearAll: 'مسح الكل',
+        deadlineApproaching: 'اقتراب الموعد النهائي',
+        deadlineExceeded: 'تجاوز الموعد النهائي',
+        newTransaction: 'وصول معاملة جديدة',
+        transactionForwarded: 'تم توجيه معاملة إليك',
+        awaitingResponse: 'انتظار رد',
+        reminder: 'تذكير',
+        backupComplete: 'اكتمل النسخ الاحتياطي',
+        suspensionReactivated: 'إعادة تفعيل معاملة معلقة',
       },
       
-      // الأمان
-      security: {
-        login: 'تسجيل الدخول',
-        logout: 'تسجيل الخروج',
-        pinCode: 'رمز PIN',
-        enterPin: 'أدخل رمز PIN',
-        biometricAuth: 'المصادقة البيومترية',
-        fingerprint: 'بصمة الإصبع',
-        faceId: 'التعرف على الوجه',
-        changePin: 'تغيير رمز PIN',
-        forgotPin: 'نسيت رمز PIN؟',
+      // رسائل عامة
+      common: {
+        loading: 'جاري التحميل...',
+        noData: 'لا توجد بيانات',
+        error: 'حدث خطأ',
+        success: 'تم بنجاح',
+        confirmDelete: 'هل أنت متأكد من الحذف؟',
+        confirmAction: 'هل أنت متأكد من هذا الإجراء؟',
+        tryAgain: 'حاول مرة أخرى',
+        refresh: 'تحديث',
+        close: 'إغلاق',
+        back: 'رجوع',
+        next: 'التالي',
+        previous: 'السابق',
+        yes: 'نعم',
+        no: 'لا',
+      },
+      
+      // الأدوار
+      roles: {
+        secretary: 'موظف سكرتارية',
+        manager: 'مدير مكتب',
+        executive: 'مسؤول تنفيذي',
+        admin: 'مسؤول نظام',
+      },
+      
+      // أنواع المعاملات
+      types: {
+        correspondence: 'مراسلات',
+        requests: 'طلبات',
+        reports: 'تقارير',
+        financial: 'مالية',
+        legal: 'قانونية',
+        administrative: 'إدارية',
+        hr: 'موارد بشرية',
+        technical: 'تقنية',
+      },
+      
+      // أسباب
+      reasons: {
+        awaiting: {
+          externalResponse: 'رد خارجي',
+          decision: 'قرار',
+          documents: 'مستندات',
+          payment: 'دفع',
+          appointment: 'موعد إجراء',
+          legal: 'إجراء قانوني',
+          other: 'سبب آخر',
+        },
+        suspension: {
+          waitingDocument: 'انتظار مستند',
+          managerAbsent: 'غياب المسؤول',
+          adminDecision: 'قرار إداري',
+          legalReason: 'سبب قانوني',
+        },
+        closing: {
+          officialResponse: 'رد رسمي',
+          internalAction: 'إجراء داخلي',
+          finalReferral: 'إحالة نهائية',
+          filed: 'حفظ',
+          cancelled: 'إلغاء',
+          duplicate: 'تكرار',
+          withdrawn: 'سحب',
+        },
+      },
+      
+      // الأرشفة
+      archive: {
+        title: 'الأرشيف',
+        active: 'أرشيف نشط',
+        cold: 'أرشيف بارد',
+        legal: 'أرشيف قانوني',
+        restore: 'استعادة',
       },
       
       // سلة المحذوفات
       trash: {
         title: 'سلة المحذوفات',
         restore: 'استعادة',
-        permanentDelete: 'حذف نهائي',
-        daysLeft: 'أيام متبقية للاستعادة',
-        emptyTrash: 'سلة المحذوفات فارغة',
-      },
-      
-      // الإعدادات
-      settings: {
-        title: 'الإعدادات',
-        language: 'اللغة',
-        arabic: 'العربية',
-        english: 'English',
-        theme: 'السمة',
-        light: 'فاتح',
-        dark: 'داكن',
-        auto: 'تلقائي',
-        notifications: 'الإشعارات',
-        privacy: 'الخصوصية',
-        about: 'حول التطبيق',
-        version: 'الإصدار',
-      },
-      
-      // رسائل الخطأ
-      errors: {
-        networkError: 'خطأ في الاتصال بالشبكة',
-        serverError: 'خطأ في الخادم',
-        notFound: 'غير موجود',
-        unauthorized: 'غير مصرح',
-        validationError: 'خطأ في التحقق من البيانات',
-        tryAgain: 'حاول مرة أخرى',
-      },
-      
-      // رسائل النجاح
-      messages: {
-        savedSuccessfully: 'تم الحفظ بنجاح',
-        deletedSuccessfully: 'تم الحذف بنجاح',
-        restoredSuccessfully: 'تمت الاستعادة بنجاح',
-        sentSuccessfully: 'تم الإرسال بنجاح',
-        updatedSuccessfully: 'تم التحديث بنجاح',
+        deleteForever: 'حذف نهائي',
+        daysRemaining: 'أيام متبقية للحذف',
       },
     },
   },
   en: {
     translation: {
-      // General
-      appName: 'Warid 3.0',
+      // Welcome
       welcome: 'Welcome',
-      loading: 'Loading...',
-      error: 'Error',
-      success: 'Success',
-      cancel: 'Cancel',
-      confirm: 'Confirm',
-      save: 'Save',
-      delete: 'Delete',
-      edit: 'Edit',
-      add: 'Add',
-      search: 'Search',
-      filter: 'Filter',
-      refresh: 'Refresh',
-      back: 'Back',
-      next: 'Next',
-      finish: 'Finish',
+      goodMorning: 'Good Morning',
+      goodEvening: 'Good Evening',
       
-      // Transaction Status
+      // Status
       status: {
-        arrived: 'Arrived',
-        registering: 'Registering',
+        received: 'Received',
+        inRegistration: 'In Registration',
         active: 'Active',
-        directed: 'Directed',
-        pending: 'Pending Response',
+        forwarded: 'Forwarded',
+        awaitingResponse: 'Awaiting Response',
         suspended: 'Suspended',
-        late: 'Late',
+        overdue: 'Overdue',
         completed: 'Completed',
         archived: 'Archived',
       },
       
-      // Priorities
+      // Priority
       priority: {
-        low: 'Normal',
-        medium: 'Medium',
-        high: 'Urgent',
-        urgent: 'Very Important & Urgent',
+        normal: 'Normal',
+        important: 'Important',
+        urgent: 'Urgent',
+        critical: 'Critical',
       },
       
       // Dashboard
       dashboard: {
         title: 'Dashboard',
-        totalTransactions: 'Total Transactions',
+        activeTransactions: 'Active',
+        overdueTransactions: 'Overdue',
+        endingToday: 'Ending Today',
+        completionRate: 'Completion Rate',
+        needsAttention: 'Needs Attention Now',
+        newInbox: 'New Inbox',
+        morningSummary: 'Daily Summary',
+        transactionsEndingToday: 'Transactions Ending Today',
+        transactionsOverdue: 'Overdue Transactions',
+        transactionsAwaitingResponse: 'Transactions Awaiting Response',
         activeTransactions: 'Active Transactions',
-        completedToday: 'Completed Today',
-        lateTransactions: 'Late',
-        pendingResponses: 'Pending Responses',
-        statistics: 'Statistics',
-        recentActivity: 'Recent Activity',
       },
       
-      // Transactions
-      transactions: {
-        title: 'Transactions',
-        newTransaction: 'New Transaction',
-        transactionNumber: 'Transaction Number',
+      // Transaction
+      transaction: {
+        new: 'New Transaction',
+        all: 'All Transactions',
+        details: 'Transaction Details',
+        number: 'Transaction Number',
         subject: 'Subject',
         sender: 'Sender',
-        recipient: 'Recipient',
-        dateReceived: 'Date Received',
+        type: 'Type',
+        priority: 'Priority',
         deadline: 'Deadline',
+        status: 'Status',
         attachments: 'Attachments',
-        notes: 'Notes',
-        history: 'Transaction History',
-        directTo: 'Direct To',
-        followUp: 'Follow Up',
-        complete: 'Complete',
+        comments: 'Comments',
+        timeline: 'Timeline',
+        info: 'Information',
+        actions: 'Actions',
+        close: 'Close',
+        reopen: 'Reopen',
+        forward: 'Forward',
+        remind: 'Remind',
         archive: 'Archive',
+        delete: 'Delete',
+        search: 'Search',
+        filter: 'Filter',
+        create: 'Create',
+        save: 'Save',
+        cancel: 'Cancel',
+        confirm: 'Confirm',
+        edit: 'Edit',
       },
       
-      // Search & Reports
-      search: {
-        title: 'Advanced Search',
-        keyword: 'Keyword',
-        dateFrom: 'From Date',
-        dateTo: 'To Date',
-        statusFilter: 'Status',
-        priorityFilter: 'Priority',
-        departmentFilter: 'Department',
-        results: 'Search Results',
-        exportReport: 'Export Report',
-        pdf: 'PDF',
-        excel: 'Excel',
-        csv: 'CSV',
-      },
-      
-      // Notifications
-      notifications: {
-        title: 'Notifications',
-        newMessage: 'New Message',
-        deadlineApproaching: 'Deadline Approaching',
-        transactionLate: 'Transaction Late',
-        responseRequired: 'Response Required',
-        markAsRead: 'Mark as Read',
-        markAllAsRead: 'Mark All as Read',
-        clearAll: 'Clear All',
-      },
-      
-      // Security
-      security: {
-        login: 'Login',
-        logout: 'Logout',
-        pinCode: 'PIN Code',
-        enterPin: 'Enter PIN',
-        biometricAuth: 'Biometric Authentication',
-        fingerprint: 'Fingerprint',
-        faceId: 'Face ID',
-        changePin: 'Change PIN',
-        forgotPin: 'Forgot PIN?',
-      },
-      
-      // Trash
-      trash: {
-        title: 'Trash',
-        restore: 'Restore',
-        permanentDelete: 'Permanent Delete',
-        daysLeft: 'Days Left to Restore',
-        emptyTrash: 'Trash is Empty',
-      },
-      
-      // Settings
-      settings: {
-        title: 'Settings',
-        language: 'Language',
-        arabic: 'العربية',
-        english: 'English',
-        theme: 'Theme',
-        light: 'Light',
-        dark: 'Dark',
-        auto: 'Auto',
-        notifications: 'Notifications',
-        privacy: 'Privacy',
-        about: 'About',
-        version: 'Version',
-      },
-      
-      // Error Messages
-      errors: {
-        networkError: 'Network Error',
-        serverError: 'Server Error',
-        notFound: 'Not Found',
-        unauthorized: 'Unauthorized',
-        validationError: 'Validation Error',
+      // Common
+      common: {
+        loading: 'Loading...',
+        noData: 'No Data',
+        error: 'An Error Occurred',
+        success: 'Success',
+        confirmDelete: 'Are you sure you want to delete?',
+        confirmAction: 'Are you sure?',
         tryAgain: 'Try Again',
-      },
-      
-      // Success Messages
-      messages: {
-        savedSuccessfully: 'Saved Successfully',
-        deletedSuccessfully: 'Deleted Successfully',
-        restoredSuccessfully: 'Restored Successfully',
-        sentSuccessfully: 'Sent Successfully',
-        updatedSuccessfully: 'Updated Successfully',
+        refresh: 'Refresh',
+        close: 'Close',
+        back: 'Back',
+        next: 'Next',
+        previous: 'Previous',
+        yes: 'Yes',
+        no: 'No',
       },
     },
   },
@@ -330,8 +342,8 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'ar', // اللغة الافتراضية
-    fallbackLng: 'ar',
+    lng: 'ar',
+    fallbackLng: 'en',
     interpolation: {
       escapeValue: false,
     },
