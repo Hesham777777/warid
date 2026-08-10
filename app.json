@@ -16,14 +16,16 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.warid.tracking"
+      "bundleIdentifier": "com.warid.tracking",
+      "deploymentTarget": "14.0"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1a5f7a"
       },
-      "package": "com.warid.tracking"
+      "package": "com.warid.tracking",
+      "minSdkVersion": 24
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
